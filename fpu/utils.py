@@ -1,37 +1,62 @@
-import math
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(level=logging.INFO)
 
 
-def decimal_to_bits(number, precision=20):
-    whole_bits = []
-    fraction_bits = []
-    ttl = precision
-    whole_part = math.floor(number)
-    fraction = number - whole_part
-    while whole_part:
-        next_part = whole_part // 2
-        remainder = whole_part / 2 - next_part
-        whole_part = next_part
-        bit = 1 if remainder else 0
-        whole_bits.insert(0, bit)
-    while fraction != 1 and ttl:
-        fraction = fraction * 2
-        bit = 0 if fraction < 1 else 1
-        fraction = fraction if fraction <= 1 else fraction - 1
-        fraction_bits.append(bit)
-        ttl -= 1
-    return whole_bits, fraction_bits
+def normalize(number, max_bits=8):
+    if not number:
+        return number
+
+    if number > 2 ** max_bits:
+        raise OverflowError('Number {} doesn\'t fit on {} bits!'.format(number, max_bits))
+
+    mask = 1 << max_bits - 1
+    while not (number & mask):
+        number <<= 1
+
+    return number
 
 
-def bits_to_decimal(whole, fraction):
-    whole_part = 0
-    fraction_part = 0
-    for i, bit in enumerate(reversed(whole)):
-        whole_part += bit * (2 ** i)
-    for i, bit in enumerate(fraction):
-        fraction_part += bit * (2 ** -(i + 1))
-    return whole_part + fraction_part
+class Float:
+
+    def __init__(self, whole, fraction, resolution=8):
+        self.whole = whole
+        self.fraction = fraction
+        self.resolution = resolution
+
+    @property
+    def positive(self):
+        return True if self.whole >= 0 and self.fraction >= 0 else False
+
+    def __repr__(self):
+        fraction_repr = '{:b}'.format(abs(self.fraction))
+        fraction_repr = '0' * (self.resolution - len(fraction_repr)) + fraction_repr
+        return '{sign}{whole:b}.{fraction}'.format(
+            sign='+' if self.positive else '-',
+            whole=abs(self.whole),
+            fraction=fraction_repr)
+
+
+def partition(fraction, partition_index):
+    fraction = normalize(fraction)
+    mask = normalize(2 ** (partition_index - 1) - 1)
+    yk_whole = 1
+    yk_fraction = (fraction & mask) + (normalize(1) >> (partition_index - 1))
+    yk = Float(yk_whole, yk_fraction)
+    t_mask = (normalize(1) - 1 << 1) - mask + 1
+    t_raw = ((fraction & t_mask) << (partition_index - 1)) - normalize(1)
+    t = Float(0, t_raw << 1)
+    logger.info('Fraction 1.{fraction:b} partitioned: yk {yk}, t {t}'.format(fraction=fraction, yk=yk, t=t))
+    return yk, t
 
 
 if __name__ == '__main__':
-    # print(decimal_to_bits(2.2))
-    print(bits_to_decimal([1, 0], [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]))
+    x = Float(2, 11)
+    y = Float(1, 5)
+
+    print(y)
+
+    yk, t = partition(y.fraction, 3)
+    print(yk, t)
+    # print(bin(yk * t))
