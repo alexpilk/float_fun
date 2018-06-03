@@ -3,7 +3,6 @@ from .custom_float import CustomFloat
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.INFO)
 
 
 def normalize(number, max_bits=DEFAULT_RESOLUTION):
@@ -21,7 +20,6 @@ def normalize(number, max_bits=DEFAULT_RESOLUTION):
 
 
 def partition(fraction, partition_index):
-    #fraction = normalize(fraction)
     mask = normalize(2 ** (partition_index - 1) - 1)
     yk_whole = 1
     yk_fraction = (fraction & mask) + (normalize(1) >> (partition_index - 1))
