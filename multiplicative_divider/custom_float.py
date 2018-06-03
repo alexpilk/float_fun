@@ -1,34 +1,15 @@
-import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.INFO)
-
-
-def normalize(number, max_bits=24):
-    if not number:
-        return number
-
-    if number > 2 ** max_bits:
-        raise OverflowError('Number {} doesn\'t fit on {} bits!'.format(number, max_bits))
-
-    mask = 1 << max_bits - 1
-    while not (number & mask):
-        number <<= 1
-
-    return number
+from .resolution import DEFAULT_RESOLUTION
 
 
 class CustomFloat:
 
-    default_resolution = 24
-
-    def __init__(self, whole, fraction, resolution=default_resolution):
+    def __init__(self, whole, fraction, resolution=DEFAULT_RESOLUTION):
         self.whole = whole
         self.fraction = fraction
         self.resolution = resolution
 
     @classmethod
-    def from_float(cls, number, resolution=default_resolution):
+    def from_float(cls, number, resolution=DEFAULT_RESOLUTION):
         whole = int(number // 1)
         fraction = int((number - whole) * 2 ** resolution)
         resolution = resolution
@@ -71,16 +52,3 @@ class CustomFloat:
 
     def __float__(self):
         return self.whole + (self.fraction / 2 ** self.resolution)
-
-
-def partition(fraction, partition_index):
-    fraction = normalize(fraction)
-    mask = normalize(2 ** (partition_index - 1) - 1)
-    yk_whole = 1
-    yk_fraction = (fraction & mask) + (normalize(1) >> (partition_index - 1))
-    yk = CustomFloat(yk_whole, yk_fraction)
-    t_mask = (normalize(1) - 1 << 1) - mask + 1
-    t_raw = ((fraction & t_mask) << (partition_index - 1)) - normalize(1)
-    t = CustomFloat(0, t_raw << 1)
-    logger.info('Fraction 1.{fraction:b} partitioned: yk {yk}, t {t}'.format(fraction=fraction, yk=yk, t=t))
-    return yk, t

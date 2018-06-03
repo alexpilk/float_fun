@@ -10,7 +10,7 @@ class LookupTable(object):
 
     @abstractmethod
     def __getitem__(self, item):
-        return
+        pass
 
 
 class F31(LookupTable):

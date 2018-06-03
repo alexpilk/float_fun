@@ -1,4 +1,4 @@
-from fpu.utils import normalize, partition
+from multiplicative_divider.utils import normalize, partition
 import unittest
 import logging
 
@@ -30,7 +30,7 @@ class TestNormalization(unittest.TestCase):
 class TestPartitioning(unittest.TestCase):
 
     def test_zero_zero(self):
-        fraction = 0b10001
+        fraction = normalize(0b10001)
         yk, t = partition(fraction, 4)
 
         self.assertTrue(yk.positive)
@@ -42,7 +42,7 @@ class TestPartitioning(unittest.TestCase):
         self.assertEqual(t.fraction, -normalize(1))
 
     def test_one_one(self):
-        fraction = 0b101101
+        fraction = normalize(0b101101)
         yk, t = partition(fraction, 4)
 
         self.assertTrue(yk.positive)
@@ -54,7 +54,7 @@ class TestPartitioning(unittest.TestCase):
         self.assertEqual(t.fraction, normalize(1) >> 1)
 
     def test_one_zero(self):
-        fraction = 0b101001
+        fraction = normalize(0b101001)
         yk, t = partition(fraction, 4)
 
         self.assertTrue(yk.positive)
@@ -66,12 +66,24 @@ class TestPartitioning(unittest.TestCase):
         self.assertEqual(t.fraction, -normalize(0b11))
 
     def test_zero_one(self):
-        fraction = 0b100101
+        fraction = normalize(0b100101)
         yk, t = partition(fraction, 4)
 
         self.assertTrue(yk.positive)
         self.assertEqual(yk.whole, 1)
         self.assertEqual(yk.fraction, normalize(0b1001))
+
+        self.assertTrue(t.positive)
+        self.assertEqual(t.whole, 0)
+        self.assertEqual(t.fraction, normalize(1) >> 1)
+
+    def test_zero_start(self):
+        fraction = normalize(0b000101) >> 3
+        yk, t = partition(fraction, 4)
+
+        self.assertTrue(yk.positive)
+        self.assertEqual(yk.whole, 1)
+        self.assertEqual(yk.fraction, normalize(0b0001) >> 3)
 
         self.assertTrue(t.positive)
         self.assertEqual(t.whole, 0)
